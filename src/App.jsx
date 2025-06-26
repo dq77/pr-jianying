@@ -9,22 +9,11 @@ import {
 import { Button, Radio } from 'antd';
 import './App.css'
 import {
-  Timeline,
-  TimelineAction,
-  TimelineRow,
-  TimelineState,
-} from '@xzdarcy/react-timeline-editor';
+  Timeline } from '@xzdarcy/react-timeline-editor';
 import { useEffect, useRef, useState } from 'react';
 import { assetsPrefix, createFileWriter } from './utils';
 
-type TLActionWithName = TimelineAction & { name: string };
-
-const uhaParam = new URLSearchParams(location.search).get('UHA') ?? '';
-const __unsafe_hardwareAcceleration__ = (
-  ['no-preference', 'prefer-hardware', 'prefer-software'].includes(uhaParam)
-    ? uhaParam
-    : undefined
-) as HardwarePreference | undefined;
+const __unsafe_hardwareAcceleration__ =  undefined;
 
 const TimelineEditor = ({
   timelineData: tlData,
@@ -34,21 +23,9 @@ const TimelineEditor = ({
   onDeleteAction,
   timelineState,
   onSplitAction,
-}: {
-  timelineData: TimelineRow[];
-  timelineState: React.MutableRefObject<TimelineState | undefined>;
-  onPreviewTime: (time: number) => void;
-  onOffsetChange: (action: TimelineAction) => void;
-  onDurationChange: (args: {
-    action: TimelineAction;
-    start: number;
-    end: number;
-  }) => void;
-  onDeleteAction: (action: TimelineAction) => void;
-  onSplitAction: (action: TLActionWithName) => void;
 }) => {
   const [scale, setScale] = useState(10);
-  const [activeAction, setActiveAction] = useState<TLActionWithName | null>(
+  const [activeAction, setActiveAction] = useState(
     null,
   );
   return (
@@ -119,7 +96,7 @@ const TimelineEditor = ({
           setActiveAction(action);
         }}
         // @ts-expect-error
-        getActionRender={(action: TLActionWithName) => {
+        getActionRender={(action) => {
           const baseStyle =
             'h-full justify-center items-center flex text-white';
           if (action.id === activeAction?.id) {
@@ -139,7 +116,7 @@ const TimelineEditor = ({
   );
 };
 
-const actionSpriteMap = new WeakMap<TimelineAction, VisibleSprite>();
+const actionSpriteMap = new WeakMap();
 
 const clipsSrc = assetsPrefix([
   'video/bunny_0.mp4',
@@ -148,14 +125,14 @@ const clipsSrc = assetsPrefix([
 ]);
 
 export default function App() {
-  const [avCvs, setAVCvs] = useState<AVCanvas | null>(null);
-  const tlState = useRef<TimelineState>();
+  const [avCvs, setAVCvs] = useState(null);
+  const tlState = useRef();
 
   const [playing, setPlaying] = useState(false);
   const [clipSource, setClipSource] = useState('local');
 
-  const [cvsWrapEl, setCvsWrapEl] = useState<HTMLDivElement | null>(null);
-  const [tlData, setTLData] = useState<TimelineRow[]>([
+  const [cvsWrapEl, setCvsWrapEl] = useState(null);
+  const [tlData, setTLData] = useState([
     { id: '1-video', actions: [] },
     { id: '2-audio', actions: [] },
     { id: '3-img', actions: [] },
@@ -187,7 +164,7 @@ export default function App() {
     };
   }, [cvsWrapEl]);
 
-  function addSprite2Track(trackId: string, spr: VisibleSprite, name = '') {
+  function addSprite2Track(trackId, spr, name = '') {
     const track = tlData.find(({ id }) => id === trackId);
     if (track == null) return null;
 
@@ -241,11 +218,9 @@ export default function App() {
           const stream =
             clipSource === 'local'
               ? (await loadFile({ 'video/*': ['.mp4', '.mov'] })).stream()
-              : (await fetch(clipsSrc[0])).body!;
+              : (await fetch(clipsSrc[0])).body;
           const spr = new VisibleSprite(
-            new MP4Clip(stream, {
-              __unsafe_hardwareAcceleration__,
-            }),
+            new MP4Clip(stream),
           );
           await avCvs?.addSprite(spr);
           addSprite2Track('1-video', spr, '视频');
@@ -259,7 +234,7 @@ export default function App() {
           const stream =
             clipSource === 'local'
               ? (await loadFile({ 'audio/*': ['.m4a', '.mp3'] })).stream()
-              : (await fetch(clipsSrc[1])).body!;
+              : (await fetch(clipsSrc[1])).body;
           const spr = new VisibleSprite(new AudioClip(stream));
           await avCvs?.addSprite(spr);
           addSprite2Track('2-audio', spr, '音频');
@@ -282,7 +257,7 @@ export default function App() {
               args = stream;
             }
           } else {
-            args = (await fetch(clipsSrc[2])).body!;
+            args = (await fetch(clipsSrc[2])).body;
           }
           // @ts-ignore
           const spr = new VisibleSprite(new ImgClip(args));
@@ -327,7 +302,7 @@ export default function App() {
         className="mx-[10px]"
         onClick={async () => {
           if (avCvs == null) return;
-          (await avCvs.createCombinator({ __unsafe_hardwareAcceleration__ }))
+          (await avCvs.createCombinator())
             .output()
             .pipeTo(await createFileWriter());
         }}
@@ -366,12 +341,12 @@ export default function App() {
           track.splice(track.indexOf(action), 1);
           setTLData([...tlData]);
         }}
-        onSplitAction={async (action: TLActionWithName) => {
+        onSplitAction={async (action) => {
           const spr = actionSpriteMap.get(action);
           if (avCvs == null || spr == null || tlState.current == null) return;
           const newClips = await spr
             .getClip()
-            .split?.(tlState.current.getTime() * 1e6 - spr.time.offset)!;
+            .split?.(tlState.current.getTime() * 1e6 - spr.time.offset);
           // 移除原有对象
           avCvs.removeSprite(spr);
           actionSpriteMap.delete(action);
@@ -405,9 +380,9 @@ export default function App() {
   );
 }
 
-async function loadFile(accept: Record<string, string[]>) {
+async function loadFile(accept) {
   const [fileHandle] = await window.showOpenFilePicker({
     types: [{ accept }],
   });
-  return (await fileHandle.getFile()) as File;
+  return (await fileHandle.getFile());
 }
