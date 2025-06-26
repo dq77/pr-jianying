@@ -7,6 +7,7 @@ import {
   renderTxt2ImgBitmap,
 } from '@webav/av-cliper';
 import { Button, Radio } from 'antd';
+import './App.css'
 import {
   Timeline,
   TimelineAction,
@@ -166,8 +167,8 @@ export default function App() {
     avCvs?.destroy();
     const cvs = new AVCanvas(cvsWrapEl, {
       bgColor: '#000',
-      width: 1280,
-      height: 720,
+      width: 800,
+      height: 600,
     });
     setAVCvs(cvs);
     cvs.on('timeupdate', (time) => {
