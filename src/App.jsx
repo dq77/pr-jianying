@@ -13,8 +13,6 @@ import {
 import { useEffect, useRef, useState } from 'react';
 import { assetsPrefix, createFileWriter } from './utils';
 
-const __unsafe_hardwareAcceleration__ =  undefined;
-
 const TimelineEditor = ({
   timelineData: tlData,
   onPreviewTime,
@@ -25,58 +23,34 @@ const TimelineEditor = ({
   onSplitAction,
 }) => {
   const [scale, setScale] = useState(10);
-  const [activeAction, setActiveAction] = useState(
-    null,
-  );
+  const [activeAction, setActiveAction] = useState(null);
   return (
     <div className="">
       <div className="mb-2">
         <span className="ml-[10px]">缩放：</span>
-        <Button
-          onClick={() => setScale(scale + 1)}
-          className="border rounded-full"
-        >
-          -
-        </Button>
-        <Button
-          onClick={() => setScale(scale - 1 > 1 ? scale - 1 : 1)}
-          className="border rounded-full"
-        >
-          +
-        </Button>
+        <Button onClick={() => setScale(scale + 1)} className="border rounded-full"> - </Button>
+        <Button onClick={() => setScale(scale - 1 > 1 ? scale - 1 : 1)} className="border rounded-full" > + </Button>
         <span className="mx-[10px]">|</span>
-        <Button
-          disabled={activeAction == null}
-          className="mx-[10px]"
+        <Button disabled={activeAction == null} className="mx-[10px]"
           onClick={() => {
             if (activeAction == null) return;
             onDeleteAction(activeAction);
           }}
-        >
-          删除
-        </Button>
-        <Button
-          disabled={activeAction == null}
-          className="mx-[10px]"
+        > 删除 </Button>
+        <Button disabled={activeAction == null} className="mx-[10px]"
           onClick={() => {
             if (activeAction == null) return;
             onSplitAction(activeAction);
           }}
-        >
-          分割
-        </Button>
+        > 分割 </Button>
       </div>
       <Timeline
         ref={(v) => {
           if (v == null) return;
           timelineState.current = v;
         }}
-        onChange={(d) => {}}
-        style={{ width: '100%', height: '200px' }}
-        scale={scale}
-        editorData={tlData}
-        effects={{}}
-        scaleSplitCount={5}
+        onChange={(d) => {}} style={{ width: '100%', height: '150px' }} scale={scale}
+        editorData={tlData} effects={{}} scaleSplitCount={5}
         onClickTimeArea={(time) => {
           onPreviewTime(time);
           return true;
@@ -168,10 +142,7 @@ export default function App() {
     const track = tlData.find(({ id }) => id === trackId);
     if (track == null) return null;
 
-    const start =
-      spr.time.offset === 0
-        ? Math.max(...track.actions.map((a) => a.end), 0) * 1e6
-        : spr.time.offset;
+    const start = spr.time.offset === 0 ? Math.max(...track.actions.map((a) => a.end), 0) * 1e6 : spr.time.offset;
 
     spr.time.offset = start;
     // image
@@ -190,12 +161,7 @@ export default function App() {
     actionSpriteMap.set(action, spr);
 
     track.actions.push(action);
-    setTLData(
-      tlData
-        .filter((it) => it !== track)
-        .concat({ ...track })
-        .sort((a, b) => a.id.charCodeAt(0) - b.id.charCodeAt(0)),
-    );
+    setTLData(tlData.filter((it) => it !== track).concat({ ...track }).sort((a, b) => a.id.charCodeAt(0) - b.id.charCodeAt(0)));
     return action;
   }
 
@@ -216,9 +182,7 @@ export default function App() {
         className="mx-[10px]"
         onClick={async () => {
           const stream =
-            clipSource === 'local'
-              ? (await loadFile({ 'video/*': ['.mp4', '.mov'] })).stream()
-              : (await fetch(clipsSrc[0])).body;
+            clipSource === 'local' ? (await loadFile({ 'video/*': ['.mp4', '.mov'] })).stream() : (await fetch(clipsSrc[0])).body;
           const spr = new VisibleSprite(
             new MP4Clip(stream),
           );
@@ -232,9 +196,7 @@ export default function App() {
         className="mx-[10px]"
         onClick={async () => {
           const stream =
-            clipSource === 'local'
-              ? (await loadFile({ 'audio/*': ['.m4a', '.mp3'] })).stream()
-              : (await fetch(clipsSrc[1])).body;
+            clipSource === 'local' ? (await loadFile({ 'audio/*': ['.m4a', '.mp3'] })).stream() : (await fetch(clipsSrc[1])).body;
           const spr = new VisibleSprite(new AudioClip(stream));
           await avCvs?.addSprite(spr);
           addSprite2Track('2-audio', spr, '音频');
@@ -247,9 +209,7 @@ export default function App() {
         onClick={async () => {
           let args;
           if (clipSource === 'local') {
-            const f = await loadFile({
-              'image/*': ['.png', '.jpeg', '.jpg', '.gif'],
-            });
+            const f = await loadFile({ 'image/*': ['.png', '.jpeg', '.jpg', '.gif'] });
             const stream = f.stream();
             if (/\.gif$/.test(f.name)) {
               args = { type: 'image/gif', stream };
@@ -272,10 +232,7 @@ export default function App() {
         onClick={async () => {
           const spr = new VisibleSprite(
             new ImgClip(
-              await renderTxt2ImgBitmap(
-                '示例文字',
-                'font-size: 80px; color: red;',
-              ),
+              await renderTxt2ImgBitmap('示例文字', 'font-size: 80px; color: red;'),
             ),
           );
           await avCvs?.addSprite(spr);
@@ -302,9 +259,7 @@ export default function App() {
         className="mx-[10px]"
         onClick={async () => {
           if (avCvs == null) return;
-          (await avCvs.createCombinator())
-            .output()
-            .pipeTo(await createFileWriter());
+          (await avCvs.createCombinator()).output().pipeTo(await createFileWriter());
         }}
       >
         导出视频
@@ -334,9 +289,7 @@ export default function App() {
           if (spr == null) return;
           avCvs?.removeSprite(spr);
           actionSpriteMap.delete(action);
-          const track = tlData
-            .map((t) => t.actions)
-            .find((actions) => actions.includes(action));
+          const track = tlData.map((t) => t.actions).find((actions) => actions.includes(action));
           if (track == null) return;
           track.splice(track.indexOf(action), 1);
           setTLData([...tlData]);
@@ -344,9 +297,7 @@ export default function App() {
         onSplitAction={async (action) => {
           const spr = actionSpriteMap.get(action);
           if (avCvs == null || spr == null || tlState.current == null) return;
-          const newClips = await spr
-            .getClip()
-            .split?.(tlState.current.getTime() * 1e6 - spr.time.offset);
+          const newClips = await spr.getClip().split?.(tlState.current.getTime() * 1e6 - spr.time.offset);
           // 移除原有对象
           avCvs.removeSprite(spr);
           actionSpriteMap.delete(action);
@@ -357,13 +308,9 @@ export default function App() {
           // 添加分割后生成的两个新对象
           const sprsDuration = [
             tlState.current.getTime() * 1e6 - spr.time.offset,
-            spr.time.duration -
-              (tlState.current.getTime() * 1e6 - spr.time.offset),
+            spr.time.duration - (tlState.current.getTime() * 1e6 - spr.time.offset),
           ];
-          const sprsOffset = [
-            spr.time.offset,
-            spr.time.offset + sprsDuration[0],
-          ];
+          const sprsOffset = [ spr.time.offset, spr.time.offset + sprsDuration[0] ];
           for (let i = 0; i < newClips.length; i++) {
             const clip = newClips[i];
             const newSpr = new VisibleSprite(clip);
@@ -381,8 +328,6 @@ export default function App() {
 }
 
 async function loadFile(accept) {
-  const [fileHandle] = await window.showOpenFilePicker({
-    types: [{ accept }],
-  });
+  const [fileHandle] = await window.showOpenFilePicker({ types: [{ accept }] });
   return (await fileHandle.getFile());
 }
