@@ -1,31 +1,16 @@
-const BASE_URL = 'https://webav-tech.github.io/WebAV';
-export function assetsPrefix(
-  assetsURL,
-) {
-  const base =
-    window.location.hostname.includes('webcontainer.io') ||
-    window.location.hostname.includes('stackblitz.io') ||
-    window.location.hostname.includes('csb.app')
-      ? BASE_URL
-      : '';
-  const prefix = process.env.NODE_ENV === 'development' ? '/' : '/WebAV/';
-  if (Array.isArray(assetsURL)) {
-    return assetsURL.map((url) => `${base}${prefix}${url}`);
-  }
 
-  return Object.fromEntries(
-    Object.entries(assetsURL).map(([k, v]) => [k, `${base}${prefix}${v}`]),
-  );
+export const setScreenSize = (elem) => {
+  const box = document.getElementById('play-area')
+  const height = box.offsetHeight
+  const width = height*720/1280
+  elem.style.width = `${width}px`
+  elem.style.height = `${height}px`
+}
+export const loadFile = async (accept) => {
+  const [fileHandle] = await window.showOpenFilePicker({ types: [{ accept }] });
+  return (await fileHandle.getFile());
 }
 
-export async function createFileWriter(
-  extName = 'mp4',
-){
-  const fileHandle = await window.showSaveFilePicker({
-    suggestedName: `WebAV-export-${Date.now()}.${extName}`,
-  });
-  return fileHandle.createWritable();
-}
 
 // 素材默认居中填充
 export function calculateScaledSize(content) {
@@ -67,3 +52,4 @@ export function calculateScaledSize(content) {
       y: y
   };
 }
+
