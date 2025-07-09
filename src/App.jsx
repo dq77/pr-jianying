@@ -1,17 +1,10 @@
 import { AVCanvas } from '@webav/av-canvas';
-import {
-  AudioClip,
-  ImgClip,
-  MP4Clip,
-  VisibleSprite,
-  renderTxt2ImgBitmap,
-} from '@webav/av-cliper';
+import { AudioClip, ImgClip, MP4Clip, VisibleSprite, renderTxt2ImgBitmap } from '@webav/av-cliper';
 import { Button, Radio } from 'antd';
 import './App.css'
-import {
-  Timeline } from '@xzdarcy/react-timeline-editor';
+import { Timeline } from '@xzdarcy/react-timeline-editor';
 import { useEffect, useRef, useState } from 'react';
-import { assetsPrefix, createFileWriter } from './utils';
+import { assetsPrefix, createFileWriter, calculateScaledSize } from './utils';
 
 const TimelineEditor = ({
   timelineData: tlData,
@@ -26,7 +19,7 @@ const TimelineEditor = ({
   const [activeAction, setActiveAction] = useState(null);
   return (
     <div className="">
-      <div className="mb-2">
+      <div className="">
         <span className="ml-[10px]">缩放：</span>
         <Button onClick={() => setScale(scale + 1)} className="border rounded-full"> - </Button>
         <Button onClick={() => setScale(scale - 1 > 1 ? scale - 1 : 1)} className="border rounded-full" > + </Button>
@@ -71,13 +64,10 @@ const TimelineEditor = ({
         }}
         // @ts-expect-error
         getActionRender={(action) => {
-          const baseStyle =
-            'h-full justify-center items-center flex text-white';
+          const baseStyle = 'h-full justify-center items-center flex text-white';
           if (action.id === activeAction?.id) {
             return (
-              <div
-                className={`${baseStyle} border border-red-300 border-solid box-border`}
-              >
+              <div className={`${baseStyle} border border-red-300 border-solid box-border`}>
                 {action.name}
               </div>
             );
@@ -118,9 +108,10 @@ export default function App() {
     avCvs?.destroy();
     const cvs = new AVCanvas(cvsWrapEl, {
       bgColor: '#000',
-      width: 800,
-      height: 600,
+      width: 720,
+      height: 1280,
     });
+    console.log(cvs);
     setAVCvs(cvs);
     cvs.on('timeupdate', (time) => {
       if (tlState.current == null) return;
@@ -181,12 +172,18 @@ export default function App() {
       <Button
         className="mx-[10px]"
         onClick={async () => {
-          const stream =
-            clipSource === 'local' ? (await loadFile({ 'video/*': ['.mp4', '.mov'] })).stream() : (await fetch(clipsSrc[0])).body;
-          const spr = new VisibleSprite(
-            new MP4Clip(stream),
-          );
+          const stream = clipSource === 'local' ? (await loadFile({ 'video/*': ['.mp4', '.mov'] })).stream() : (await fetch(clipsSrc[0])).body;
+          const clip = new MP4Clip(stream);
+          const videoMeta = await clip.ready
+          const { w, h, x, y } = calculateScaledSize(videoMeta)
+          const spr = new VisibleSprite(clip);
+          spr.rect.x=x
+          spr.rect.y=y
+          spr.rect.w=w
+          spr.rect.h=h
           await avCvs?.addSprite(spr);
+          
+          console.log(avCvs);
           addSprite2Track('1-video', spr, '视频');
         }}
       >
@@ -298,6 +295,7 @@ export default function App() {
           const spr = actionSpriteMap.get(action);
           if (avCvs == null || spr == null || tlState.current == null) return;
           const newClips = await spr.getClip().split?.(tlState.current.getTime() * 1e6 - spr.time.offset);
+          const { w, h, x, y } = spr.rect;
           // 移除原有对象
           avCvs.removeSprite(spr);
           actionSpriteMap.delete(action);
@@ -318,6 +316,10 @@ export default function App() {
               newSpr.time.duration = sprsDuration[i];
             }
             newSpr.time.offset = sprsOffset[i];
+            newSpr.rect.x=x
+            newSpr.rect.y=y
+            newSpr.rect.w=w
+            newSpr.rect.h=h
             await avCvs.addSprite(newSpr);
             addSprite2Track(track.id, newSpr, action.name);
           }
